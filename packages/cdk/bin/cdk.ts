@@ -4,7 +4,11 @@ import * as cdk from "@aws-cdk/core";
 import { WebsiteStack } from "../lib/website-stack";
 
 const app = new cdk.App();
-const domainNames = process.env.DOMAIN_NAMES;
+const domainNamesEnvString = process.env.DOMAIN_NAMES;
+const domainNames = domainNamesEnvString
+  ? domainNamesEnvString.split(",")
+  : undefined;
+
 new WebsiteStack(app, process.env.STACK_NAME || "WebsiteStack", {
   /* If you don't specify 'env', this stack will be environment-agnostic.
    * Account/Region-dependent features and context lookups will not work,
@@ -14,6 +18,8 @@ new WebsiteStack(app, process.env.STACK_NAME || "WebsiteStack", {
    * and Region that are implied by the current CLI configuration. */
   // env: { account: process.env.CDK_DEFAULT_ACCOUNT, region: process.env.CDK_DEFAULT_REGION },
   webiteDomain: process.env.WEBSITE_DOMAIN as string,
+  domainNames,
+  acmCertificateArn: process.env.ACM_CERTIFICATE,
 
   /* Uncomment the next line if you know exactly what Account and Region you
    * want to deploy the stack to. */
