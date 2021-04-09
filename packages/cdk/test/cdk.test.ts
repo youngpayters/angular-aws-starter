@@ -6,7 +6,8 @@ test("Website Stack", () => {
   const app = new cdk.App();
   // WHEN
   const stack = new WebsiteStack(app, "MyTestWebsiteStack", {
-    webiteDomain: "example.com",
+    websiteDomain: "example.com",
+    siteSubDomain: "test",
   });
   // THEN
   expectCDK(stack).to(haveResource("AWS::S3::Bucket"));

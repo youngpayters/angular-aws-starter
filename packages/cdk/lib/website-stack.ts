@@ -6,42 +6,54 @@ import * as s3deploy from "@aws-cdk/aws-s3-deployment";
 import * as route53 from "@aws-cdk/aws-route53";
 import * as alias from "@aws-cdk/aws-route53-targets";
 import * as acm from "@aws-cdk/aws-certificatemanager";
+import { AllowedMethods, ViewerProtocolPolicy } from "@aws-cdk/aws-cloudfront";
 
 interface WebsiteStackProps extends cdk.StackProps {
-  webiteDomain: string;
+  websiteDomain: string;
+  siteSubDomain: string;
   acmCertificateArn?: string;
-  domainNames?: Array<string>;
 }
 
 export class WebsiteStack extends cdk.Stack {
   constructor(scope: cdk.Construct, id: string, props: WebsiteStackProps) {
     super(scope, id, props);
 
-    const { domainNames, webiteDomain } = props;
-    // The code that defines your stack goes here
-    const websiteBucket = new s3.Bucket(this, "WebsiteBucket", {
-      websiteIndexDocument: "index.html",
-      websiteErrorDocument: "index.html",
-      publicReadAccess: true,
+    const { websiteDomain, siteSubDomain } = props;
+
+    const domainName = siteSubDomain + "." + websiteDomain;
+
+    const zone = route53.HostedZone.fromLookup(this, "HostedZone", {
+      domainName: websiteDomain,
     });
 
-    if (props.acmCertificateArn) {
-      domainNames?.push(webiteDomain);
-    }
+    // The code that defines your stack goes here
+    const websiteBucket = new s3.Bucket(this, "WebsiteBucket", {
+      bucketName: domainName,
+      websiteIndexDocument: "index.html",
+      websiteErrorDocument: "index.html",
+    });
 
     const certificate = props.acmCertificateArn
       ? acm.Certificate.fromCertificateArn(
           this,
-          "CloudfrontCertificate",
+          "ExistingACMCertificate",
           props.acmCertificateArn
         )
-      : undefined;
+      : new acm.DnsValidatedCertificate(this, "WebsiteDnsACMCert", {
+          domainName,
+          hostedZone: zone,
+          region: "us-east-1", // Cloudfront only checks this region for certificates.
+        });
 
     // Handles buckets whether or not they are configured for website hosting.
     const distribution = new cloudfront.Distribution(this, "Distribution", {
-      defaultBehavior: { origin: new origins.S3Origin(websiteBucket) },
+      defaultBehavior: {
+        origin: new origins.S3Origin(websiteBucket),
+        viewerProtocolPolicy: ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
+      },
+      defaultRootObject: "/index.html",
       certificate,
-      domainNames,
+      domainNames: [domainName],
     });
 
     new s3deploy.BucketDeployment(this, "DeployWithInvalidation", {
@@ -51,17 +63,12 @@ export class WebsiteStack extends cdk.Stack {
       distributionPaths: ["/assets/*", "/index.html"],
     });
 
-    const zone = new route53.PublicHostedZone(this, "HostedZone", {
-      zoneName: props.webiteDomain,
+    new route53.ARecord(this, "AliasRecord", {
+      zone,
+      recordName: domainName,
+      target: route53.RecordTarget.fromAlias(
+        new alias.CloudFrontTarget(distribution)
+      ),
     });
-
-    if (zone && zone.hostedZoneId) {
-      new route53.ARecord(this, "AliasRecord", {
-        zone,
-        target: route53.RecordTarget.fromAlias(
-          new alias.CloudFrontTarget(distribution)
-        ),
-      });
-    }
   }
 }
