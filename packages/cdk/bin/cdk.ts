@@ -1,11 +1,11 @@
 #!/usr/bin/env node
-import 'source-map-support/register';
-import * as cdk from '@aws-cdk/core';
-import { WebsiteStack } from '../lib/cdk-stack';
+import "source-map-support/register";
+import * as cdk from "@aws-cdk/core";
+import { WebsiteStack } from "../lib/website-stack";
 
 const app = new cdk.App();
-const domainNames = process.env.DOMAIN_NAMES
-new WebsiteStack(app, process.env.STACK_NAME || 'WebsiteStack', {
+const domainNames = process.env.DOMAIN_NAMES;
+new WebsiteStack(app, process.env.STACK_NAME || "WebsiteStack", {
   /* If you don't specify 'env', this stack will be environment-agnostic.
    * Account/Region-dependent features and context lookups will not work,
    * but a single synthesized template can be deployed anywhere. */
