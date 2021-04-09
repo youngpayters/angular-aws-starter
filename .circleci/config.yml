@@ -1,0 +1,68 @@
+version: 2.1
+
+commands:
+  create_concatenated_package_lock:
+    description: "Concatenate all package-lock.json files recognized by lerna.js into single file. File is used as checksum source for part of caching key."
+    parameters:
+      filename:
+        type: string
+    steps:
+      - run:
+          name: Combine package-lock.json files to single file
+          command: npx lerna la -a | awk -F packages '{printf "\"packages%s/package-lock.json\" ", $2}' | xargs cat > << parameters.filename >>
+defaults: &defaults:
+  docker: 
+    - image: cimg/node:14.10.1
+      auth:
+        username: $DOCKERHUB_USER
+        password: $DOCKERHUB_PASSWORD  # context / project UI env-var reference
+
+jobs:
+  build:
+    <<: *defaults
+    steps:
+      - checkout
+      - run: npm i
+      - run: lerna bootstrap
+      - run: lerna run build
+      - persist_to_workspace:
+          root: ~/dist
+          paths: .
+  test:
+    <<: *defaults
+    steps:
+      - checkout
+      - run: npm i
+      - run: lerna bootstrap
+      - run: lerna run test
+  deploy:
+    <<: *defaults
+    steps:
+      - checkout
+      - attach_workspace:
+          at: ~/dist
+      - run: npm i
+      - run: lerna bootstrap
+      - run: lerna run deploy -- --ci
+
+workflows:
+  jobs:
+    build-test-deploy:
+      - build:
+          context: website
+      - test:
+          context: website
+          requires:
+            - build
+      - hold:
+          type: approval # presents manual approval button in the UI
+          requires:
+            - build
+            - test
+      - deploy:
+          context: website
+          requires:
+            - build
+            - hold
+            - test
+

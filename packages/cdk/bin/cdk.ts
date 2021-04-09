@@ -1,10 +1,11 @@
 #!/usr/bin/env node
 import 'source-map-support/register';
 import * as cdk from '@aws-cdk/core';
-import { CdkStack } from '../lib/cdk-stack';
+import { WebsiteStack } from '../lib/cdk-stack';
 
 const app = new cdk.App();
-new CdkStack(app, 'CdkStack', {
+const domainNames = process.env.DOMAIN_NAMES
+new WebsiteStack(app, process.env.STACK_NAME || 'WebsiteStack', {
   /* If you don't specify 'env', this stack will be environment-agnostic.
    * Account/Region-dependent features and context lookups will not work,
    * but a single synthesized template can be deployed anywhere. */
@@ -12,6 +13,7 @@ new CdkStack(app, 'CdkStack', {
   /* Uncomment the next line to specialize this stack for the AWS Account
    * and Region that are implied by the current CLI configuration. */
   // env: { account: process.env.CDK_DEFAULT_ACCOUNT, region: process.env.CDK_DEFAULT_REGION },
+  webiteDomain: process.env.WEBSITE_DOMAIN as string,
 
   /* Uncomment the next line if you know exactly what Account and Region you
    * want to deploy the stack to. */
