@@ -6,7 +6,6 @@ import * as s3deploy from "@aws-cdk/aws-s3-deployment";
 import * as route53 from "@aws-cdk/aws-route53";
 import * as alias from "@aws-cdk/aws-route53-targets";
 import * as acm from "@aws-cdk/aws-certificatemanager";
-import { AllowedMethods, ViewerProtocolPolicy } from "@aws-cdk/aws-cloudfront";
 
 interface WebsiteStackProps extends cdk.StackProps {
   websiteDomain: string;
@@ -22,15 +21,15 @@ export class WebsiteStack extends cdk.Stack {
 
     const domainName = siteSubDomain + "." + websiteDomain;
 
-    const zone = route53.HostedZone.fromLookup(this, "HostedZone", {
-      domainName: websiteDomain,
-    });
-
-    // The code that defines your stack goes here
     const websiteBucket = new s3.Bucket(this, "WebsiteBucket", {
       bucketName: domainName,
       websiteIndexDocument: "index.html",
       websiteErrorDocument: "index.html",
+      publicReadAccess: true,
+    });
+
+    const zone = route53.HostedZone.fromLookup(this, "HostedZone", {
+      domainName: websiteDomain,
     });
 
     const certificate = props.acmCertificateArn
@@ -45,13 +44,16 @@ export class WebsiteStack extends cdk.Stack {
           region: "us-east-1", // Cloudfront only checks this region for certificates.
         });
 
-    // Handles buckets whether or not they are configured for website hosting.
     const distribution = new cloudfront.Distribution(this, "Distribution", {
-      defaultBehavior: {
-        origin: new origins.S3Origin(websiteBucket),
-        viewerProtocolPolicy: ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
-      },
+      defaultBehavior: { origin: new origins.S3Origin(websiteBucket) },
       defaultRootObject: "/index.html",
+      errorResponses: [
+        {
+          httpStatus: 404,
+          responseHttpStatus: 200,
+          responsePagePath: "/index.html",
+        },
+      ],
       certificate,
       domainNames: [domainName],
     });
