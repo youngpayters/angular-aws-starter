@@ -58,3 +58,10 @@ Just be sure to plug in the same environment variables for your pipeline as per 
 # Contributing
 
 Feel free to create MRs with any improvements features as you see fit. Be sure to create issues as well if things that are wrong.
+
+# Next steps and future work
+
+I would like to add an extra package to this that would add an api to follow the backend for frontend
+
+* Lambda backed AWS API Gateway project (Tour of Heroes starting api)
+* Angular Tour of Heroes API base project (services/http/unit testing/routing)
