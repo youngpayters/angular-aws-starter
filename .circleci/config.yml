@@ -48,8 +48,8 @@ jobs:
       - run: lerna run deploy -- --ci
 
 workflows:
-  jobs:
-    build-test-deploy:
+  build-test-deploy:
+    jobs:
       - build:
           context: website
       - test:
@@ -67,4 +67,3 @@ workflows:
             - build
             - hold
             - test
-
