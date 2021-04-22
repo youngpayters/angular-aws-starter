@@ -10,16 +10,18 @@ commands:
       - run:
           name: Combine package-lock.json files to single file
           command: npx lerna la -a | awk -F packages '{printf "\"packages%s/package-lock.json\" ", $2}' | xargs cat > << parameters.filename >>
-defaults: &defaults:
-  docker: 
-    - image: cimg/node:14.10.1
-      auth:
-        username: $DOCKERHUB_USER
-        password: $DOCKERHUB_PASSWORD  # context / project UI env-var reference
+
+executors:
+  node-executor:
+    docker:
+      - image: cimg/node:14.10.1
+        auth:
+          username: $DOCKERHUB_USER
+          password: $DOCKERHUB_PASSWORD
 
 jobs:
   build:
-    <<: *defaults
+    executor: node-executor
     steps:
       - checkout
       - run: npm i
@@ -29,14 +31,14 @@ jobs:
           root: ~/dist
           paths: .
   test:
-    <<: *defaults
+    executor: node-executor
     steps:
       - checkout
       - run: npm i
       - run: lerna bootstrap
       - run: lerna run test
   deploy:
-    <<: *defaults
+    executor: node-executor
     steps:
       - checkout
       - attach_workspace:
