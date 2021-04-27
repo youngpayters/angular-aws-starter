@@ -84,4 +84,4 @@ workflows:
       - deploy:
           context: Website
           requires:
-            - hold
+            - manual-approval
