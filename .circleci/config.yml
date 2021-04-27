@@ -82,6 +82,11 @@ workflows:
             - test-cdk
             - test-website
       - deploy:
+          filters:
+            branches:
+              only: main
+            tags:
+              only: /^v.*/
           context: Website
           requires:
             - manual-approval
