@@ -20,7 +20,7 @@ You can create this on the [AWS console here](https://console.aws.amazon.com/rou
 
 I have added [CircleCI](https://circleci.com/) as a means for deploying. 
 
-You will need to setup a [context](https://circleci.com/docs/2.0/contexts/?section=pipelines) with the following env variables, subdivided below but all should be part of the context or project level env variables.
+You will need to setup a [context](https://circleci.com/docs/2.0/contexts/?section=pipelines) named `Website` with the following env variables, subdivided below but all should be part of the context or project level env variables.
 
 The CI/CD workflow is still in an early phase of development so would like to add a staging/production style approach to deployment that would allow for testing before deploying to production to reduce the risk of breaking changes.
 

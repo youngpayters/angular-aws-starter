@@ -18,52 +18,70 @@ executors:
         auth:
           username: $DOCKERHUB_USER
           password: $DOCKERHUB_PASSWORD
-
 jobs:
   build:
     executor: node-executor
     steps:
       - checkout
       - run: npm i
-      - run: lerna bootstrap
-      - run: lerna run build
+      - run: npm run lerna -- bootstrap
+      - run: npm run lerna -- run build
       - persist_to_workspace:
-          root: ~/dist
-          paths: .
-  test:
+          root: .
+          paths: ./dist/website
+
+  test-cdk:
     executor: node-executor
     steps:
       - checkout
+      - attach_workspace:
+          at: .
       - run: npm i
-      - run: lerna bootstrap
-      - run: lerna run test
+      - run: npm run lerna -- bootstrap
+      - run: npm run lerna -- --scope cdk run test
+
+  test-website:
+    docker:
+      - image: trion/ng-cli-karma
+        auth:
+          username: $DOCKERHUB_USER
+          password: $DOCKERHUB_PASSWORD
+    steps:
+      - checkout
+      - run: npm i
+      - run: npm run lerna -- bootstrap
+      - run: npm run lerna -- --scope website run test:ci
+      - store_test_results:
+          path: ./packages/website/test-results
+
   deploy:
     executor: node-executor
     steps:
       - checkout
       - attach_workspace:
-          at: ~/dist
+          at: .
       - run: npm i
-      - run: lerna bootstrap
-      - run: lerna run deploy -- --ci
+      - run: npm run lerna -- bootstrap
+      - run: npm run lerna -- run deploy:ci
 
 workflows:
   build-test-deploy:
     jobs:
       - build:
-          context: website
-      - test:
-          context: website
+          context: Website
+      - test-website:
+          context: Website
+      - test-cdk:
+          context: Website
           requires:
             - build
-      - hold:
+      - manual-approval:
           type: approval # presents manual approval button in the UI
           requires:
             - build
-            - test
+            - test-cdk
+            - test-website
       - deploy:
-          context: website
+          context: Website
           requires:
-            - build
             - hold
-            - test
