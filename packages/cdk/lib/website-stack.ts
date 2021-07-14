@@ -1,6 +1,7 @@
 import * as cdk from "@aws-cdk/core";
 import * as s3 from "@aws-cdk/aws-s3";
 import * as cloudfront from "@aws-cdk/aws-cloudfront";
+import { ViewerProtocolPolicy } from "@aws-cdk/aws-cloudfront";
 import * as origins from "@aws-cdk/aws-cloudfront-origins";
 import * as s3deploy from "@aws-cdk/aws-s3-deployment";
 import * as route53 from "@aws-cdk/aws-route53";
@@ -45,7 +46,10 @@ export class WebsiteStack extends cdk.Stack {
         });
 
     const distribution = new cloudfront.Distribution(this, "Distribution", {
-      defaultBehavior: { origin: new origins.S3Origin(websiteBucket) },
+      defaultBehavior: {
+        origin: new origins.S3Origin(websiteBucket),
+        viewerProtocolPolicy: ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
+      },
       defaultRootObject: "/index.html",
       errorResponses: [
         {
